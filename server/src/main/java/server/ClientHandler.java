@@ -133,7 +133,7 @@ public class ClientHandler {
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    System.out.println("Клиент отключился по таймауту");
+                    clientHandlerLogger.log(Level.INFO, "Клиент отключился по таймауту");
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
@@ -141,7 +141,6 @@ public class ClientHandler {
                 } finally {
                     server.unsubscribe(this);
                     clientHandlerLogger.log(Level.INFO, "Клиент отключился");
-                    System.out.println("Клиент отключился");
                     try {
                         socket.close();
                     } catch (IOException e) {
