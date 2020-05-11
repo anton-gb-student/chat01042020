@@ -2,11 +2,28 @@ package server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.logging.*;
 
 public class ClientHandler {
+
+    private static final Logger clientHandlerLogger = Logger.getLogger(ClientHandler.class.getName());
+    private static Handler clientHandlerHandler;
+
+    static {
+        try {
+            LogManager logManager = LogManager.getLogManager();
+            logManager.readConfiguration(new FileInputStream("logging.properties"));
+            clientHandlerHandler = new FileHandler("clientHandler.log", true);
+            clientHandlerHandler.setFormatter(new SimpleFormatter());
+            clientHandlerLogger.addHandler(clientHandlerHandler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private Socket socket;
     private DataInputStream in;
@@ -19,7 +36,7 @@ public class ClientHandler {
     public ClientHandler(Socket socket, Server server) {
         try {
             this.socket = socket;
-            System.out.println("RemoteSocketAddress:  " + socket.getRemoteSocketAddress());
+            clientHandlerLogger.log(Level.INFO, "RemoteSocketAddress:  " + socket.getRemoteSocketAddress());
             this.server = server;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
@@ -32,7 +49,7 @@ public class ClientHandler {
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/reg ")) {
-                            System.out.println("сообщение с просьбой регистрации прошло");
+                            clientHandlerLogger.log(Level.INFO, "сообщение с просьбой регистрации прошло");
                             String[] token = str.split(" ");
                             boolean b = server
                                     .getAuthService()
@@ -40,12 +57,14 @@ public class ClientHandler {
                             if (b) {
                                 sendMsg("Регистрация прошла успешно");
                             } else {
+                                clientHandlerLogger.log(Level.INFO, "Неудачная попытка регистрации: логин или ник уже занят");
                                 sendMsg("Логин или ник уже занят");
                             }
                         }
 
 
                         if (str.equals("/end")) {
+                            clientHandlerLogger.log(Level.INFO, "Клиент отключился крестиком");
                             throw new RuntimeException("Клиент отключился крестиком");
 
                         }
@@ -61,13 +80,15 @@ public class ClientHandler {
                                     sendMsg("/authok " + newNick);
                                     nick = newNick;
                                     server.subscribe(this);
-                                    System.out.println("Клиент " + nick + " прошел аутентификацию");
+                                    clientHandlerLogger.log(Level.INFO, "Клиент " + nick + " прошел аутентификацию");
                                     socket.setSoTimeout(0);
                                     break;
                                 } else {
+                                    clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться");
                                     sendMsg("С этим логином уже авторизовались");
                                 }
                             } else {
+                                clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться");
                                 sendMsg("Неверный логин / пароль");
                             }
                         }
@@ -119,6 +140,7 @@ public class ClientHandler {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
+                    clientHandlerLogger.log(Level.INFO, "Клиент отключился");
                     System.out.println("Клиент отключился");
                     try {
                         socket.close();

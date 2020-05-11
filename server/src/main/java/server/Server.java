@@ -1,15 +1,31 @@
 package server;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 
 public class Server {
+
+    private static final Logger serverLogger = Logger.getLogger(Server.class.getName());
+    private static Handler serverHandler;
+
+    static {
+        try {
+            LogManager logManager = LogManager.getLogManager();
+            logManager.readConfiguration(new FileInputStream("logging.properties"));
+            serverHandler = new FileHandler("server.log", true);
+            serverHandler.setFormatter(new SimpleFormatter());
+            serverLogger.addHandler(serverHandler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 
     private Vector<ClientHandler> clients;
@@ -23,6 +39,7 @@ public class Server {
         clients = new Vector<>();
 //        authService = new SimpleAuthService();
         if (!SQLHandler.connect()) {
+            serverLogger.log(Level.WARNING, "Не удалось подключиться к БД \n");
             throw new RuntimeException("Не удалось подключиться к БД");
         }
         authService = new DBAuthServise();
@@ -33,16 +50,17 @@ public class Server {
 
         try {
             server = new ServerSocket(8189);
-            System.out.println("Сервер запущен");
+            serverLogger.log(Level.INFO, "Сервер запущен \n");
 
             while (true) {
                 socket = server.accept();
-                System.out.println("Клиент подключился");
+                serverLogger.log(Level.INFO, "Клиент подключился \n");
 
                 new ClientHandler(socket, this);
             }
 
         } catch (IOException e) {
+            serverLogger.log(Level.WARNING, "error: ", e);
             e.printStackTrace();
         } finally {
             SQLHandler.disconnect();
@@ -50,6 +68,7 @@ public class Server {
             try {
                 server.close();
             } catch (IOException e) {
+                serverLogger.log(Level.WARNING, "error: ", e);
                 e.printStackTrace();
             }
         }
