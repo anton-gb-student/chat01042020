@@ -36,7 +36,7 @@ public class ClientHandler {
     public ClientHandler(Socket socket, Server server) {
         try {
             this.socket = socket;
-            clientHandlerLogger.log(Level.INFO, "RemoteSocketAddress:  " + socket.getRemoteSocketAddress());
+            clientHandlerLogger.log(Level.INFO, "RemoteSocketAddress:  " + socket.getRemoteSocketAddress() + "\n");
             this.server = server;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
@@ -49,7 +49,7 @@ public class ClientHandler {
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/reg ")) {
-                            clientHandlerLogger.log(Level.INFO, "сообщение с просьбой регистрации прошло");
+                            clientHandlerLogger.log(Level.INFO, "сообщение с просьбой регистрации прошло \n");
                             String[] token = str.split(" ");
                             boolean b = server
                                     .getAuthService()
@@ -57,14 +57,14 @@ public class ClientHandler {
                             if (b) {
                                 sendMsg("Регистрация прошла успешно");
                             } else {
-                                clientHandlerLogger.log(Level.INFO, "Неудачная попытка регистрации: логин или ник уже занят");
+                                clientHandlerLogger.log(Level.INFO, "Неудачная попытка регистрации: логин или ник уже занят \n");
                                 sendMsg("Логин или ник уже занят");
                             }
                         }
 
 
                         if (str.equals("/end")) {
-                            clientHandlerLogger.log(Level.INFO, "Клиент отключился крестиком");
+                            clientHandlerLogger.log(Level.INFO, "Клиент отключился крестиком \n");
                             throw new RuntimeException("Клиент отключился крестиком");
 
                         }
@@ -84,11 +84,11 @@ public class ClientHandler {
                                     socket.setSoTimeout(0);
                                     break;
                                 } else {
-                                    clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться");
+                                    clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться \n");
                                     sendMsg("С этим логином уже авторизовались");
                                 }
                             } else {
-                                clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться");
+                                clientHandlerLogger.log(Level.WARNING, "Неудачная попытка залогиниться \n");
                                 sendMsg("Неверный логин / пароль");
                             }
                         }
@@ -133,14 +133,14 @@ public class ClientHandler {
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    clientHandlerLogger.log(Level.INFO, "Клиент отключился по таймауту");
+                    clientHandlerLogger.log(Level.INFO, "Клиент отключился по таймауту \n");
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
-                    clientHandlerLogger.log(Level.INFO, "Клиент отключился");
+                    clientHandlerLogger.log(Level.INFO, "Клиент отключился \n");
                     try {
                         socket.close();
                     } catch (IOException e) {
